@@ -28,6 +28,7 @@ import com.liferay.util.bridges.mvc.MVCPortlet;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.ListIterator;
 
 import javax.portlet.ActionRequest;
 import javax.portlet.ActionResponse;
@@ -36,10 +37,6 @@ import javax.portlet.PortletException;
 /**
  * Portlet implementation class JournalArticleSearcher
  */
-// We tried using JournalArticleServiceUtil.getArticles() or
-// JournalArticleServiceUtil.getGroupArticles().
-// The list is filtered based on the role of the current user BUT there are
-// duplicates when the user has several roles.
 public class JournalArticleSearcher extends MVCPortlet {
 	public void processAction(ActionRequest actionRequest,
 			ActionResponse actionResponse) throws IOException, PortletException {
@@ -98,33 +95,71 @@ public class JournalArticleSearcher extends MVCPortlet {
 			System.out.println("roles> " + fetchedRole.getName());
 		}
 
-		int start = 0;
-		int end = 1000;
-		List<JournalArticle> myResults1 = null;
-		List<JournalArticle> myResults2 = null;
-		try {
-			myResults1 = JournalArticleLocalServiceUtil.getArticles(defGroupId,
-					start, end);
+//		int start = 0;
+//		int end = 1000;
+//		List<JournalArticle> myResults1 = new ArrayList<JournalArticle>();
+//		List<JournalArticle> myResults2 = new ArrayList<JournalArticle>();
+		//try {
+//			myResults1 = JournalArticleLocalServiceUtil.getArticles(defGroupId,
+//					start, end);
+//			myResults1 = JournalArticleLocalServiceUtil.getArticles(defGroupId);
 			// myResults2 = JournalArticleLocalServiceUtil.getArticles(groupId,
 			// start, end);
+//		} catch (SystemException e) {
+//			e.printStackTrace();
+//		}
+		
+		
+		String myStructureKey = "";
+		JournalArticle articleLastVersion;
+		List<JournalArticle> latestArticleList = new ArrayList<JournalArticle>();
+		List<JournalArticle> allArticlesList = null;
+		try {
+			allArticlesList = JournalArticleLocalServiceUtil.getStructureArticles(defGroupId, myStructureKey);
+		} catch (SystemException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		ListIterator<JournalArticle> it = allArticlesList.listIterator();
+		List<String> checkedArticleIds = new ArrayList<String>();
+		 
+		while (it.hasNext()) {
+		  JournalArticle article = it.next();
+		  if (checkedArticleIds.contains(article.getArticleId())) {
+		    continue; // previous article version already checked
+		  }
+		  try {
+			articleLastVersion = JournalArticleLocalServiceUtil.getLatestArticle(defGroupId, article.getArticleId());
+		} catch (PortalException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		} catch (SystemException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		for (JournalArticle myResult1 : myResults1) {
-
-			System.out.println("---myResult START: " + myResult1.getTitle());
+//		  checkedArticleIds.add(article.getArticleId());
+//		  System.out.println("Added articleId " + article.getArticleId() + " with version " + article.getVersion());
+		  latestArticleList.add(article);
+		}
+		
+		
+		
+		for (JournalArticle myResult1 : latestArticleList) {
 
 			try {
 				JournalArticlePermission.check(permissionChecker, myResult1,
 						ActionKeys.VIEW);
+//				System.out.println("---myResult START: " + myResult1.getTitle());
+				System.out.println(myResult1.getTitle());
 			} catch (PortalException e) {
 				// TODO Auto-generated catch block
-				System.out.println("NO PERMISSIONS!!");
+//				System.out.println("NO PERMISSIONS!!");
 				// e.printStackTrace();
 			}
+
 			// System.out.println("art " + myResult1.getTitle());
 
-			System.out.println("---myResult END ");
+//			System.out.println("---myResult END ");
 
 		}
 
